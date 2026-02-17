@@ -31,9 +31,33 @@ def apply_custom_css():
         [data-testid="stSidebar"] {
             background-color: #2C3E50;
         }
-        
-        [data-testid="stSidebar"] .css-1d391kg {
+
+        [data-testid="stSidebar"] * {
             color: #FFFFFF;
+        }
+
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] li,
+        [data-testid="stSidebar"] [data-testid="stSidebarNavLink"] span,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] .stRadio label,
+        [data-testid="stSidebar"] .stSelectbox label {
+            color: #E8EEF9 !important;
+        }
+
+        [data-testid="stSidebar"] [role="radiogroup"] label {
+            padding: 0.35rem 0.4rem;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+
+        [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+        }
+
+        [data-testid="stSidebar"] [role="radiogroup"] input:checked + div {
+            color: #FFFFFF !important;
+            font-weight: 600;
         }
         
         /* Metrics Styling */
