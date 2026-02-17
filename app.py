@@ -4,23 +4,25 @@ AI Government Scheme Eligibility Predictor - Streamlit Application
 A modern, professional web application that helps citizens check their
 eligibility for government schemes using Machine Learning.
 
-Design: Indian government aesthetic with saffron, green, and beige colors
-Technology: Streamlit + scikit-learn DecisionTreeClassifier
+Design: Clean and professional layout
+Technology: Streamlit + scikit-learn RandomForestClassifier
 """
 
 import streamlit as st
 from model import predict_eligibility, get_feature_importance
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Page Configuration
 st.set_page_config(
     page_title="AI Government Scheme Eligibility Predictor",
     page_icon="🏛️",
     layout="centered",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Indian Government Theme
+# Custom CSS for Professional Theme
 st.markdown("""
 <style>
     /* Import Google Fonts */
@@ -38,7 +40,7 @@ st.markdown("""
     
     /* Header Styling */
     .header-container {
-        background: linear-gradient(135deg, #E67E22 0%, #F2994A 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 2.5rem 2rem;
         border-radius: 16px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -61,50 +63,10 @@ st.markdown("""
         margin-bottom: 0;
     }
     
-    /* Card Styling */
-    .info-card {
-        background-color: #FFFFFF;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        margin-bottom: 1.5rem;
-        border-left: 4px solid #1B7F5C;
-    }
-    
-    /* Input Section */
-    .stSlider {
-        padding: 0.5rem 0;
-    }
-    
-    .stSelectbox {
-        padding: 0.5rem 0;
-    }
-    
-    /* Button Styling */
-    .stButton > button {
-        background: linear-gradient(135deg, #F2994A 0%, #E67E22 100%);
-        color: white;
-        font-weight: 600;
-        font-size: 1.1rem;
-        padding: 0.75rem 2rem;
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 12px rgba(246, 149, 74, 0.3);
-        transition: all 0.3s ease;
-        width: 100%;
-        margin-top: 1rem;
-    }
-    
-    .stButton > button:hover {
-        background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
-        box-shadow: 0 6px 16px rgba(246, 149, 74, 0.4);
-        transform: translateY(-2px);
-    }
-    
     /* Success/Error Messages */
     .success-box {
         background-color: #D5F5E3;
-        border-left: 5px solid #1B7F5C;
+        border-left: 5px solid #28a745;
         padding: 1.5rem;
         border-radius: 12px;
         margin: 1.5rem 0;
@@ -112,29 +74,31 @@ st.markdown("""
     
     .error-box {
         background-color: #FADBD8;
-        border-left: 5px solid #E74C3C;
+        border-left: 5px solid #dc3545;
         padding: 1.5rem;
         border-radius: 12px;
         margin: 1.5rem 0;
     }
     
-    /* Footer */
-    .footer {
-        text-align: center;
-        padding: 2rem;
-        color: #7F8C8D;
-        font-size: 0.9rem;
-        margin-top: 3rem;
-        border-top: 1px solid #E0E0E0;
+    /* Button Styling */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1rem;
     }
     
-    /* Feature Card */
-    .feature-card {
-        background-color: #F4E6D7;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 0.5rem 0;
-        border-left: 3px solid #F2994A;
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        transform: translateY(-2px);
     }
     
     /* Hide Streamlit Branding */
@@ -153,31 +117,27 @@ st.markdown("""
 st.markdown("""
 <div class="header-container">
     <div class="main-title">🏛️ AI Government Scheme Eligibility Predictor</div>
-    <div class="subtitle">Empowering Citizens Through Smart Technology</div>
+    <div class="subtitle">Powered by Machine Learning</div>
 </div>
 """, unsafe_allow_html=True)
 
-# Introduction Card
+# Introduction
 st.markdown("""
-<div class="info-card">
-    <h3 style="color: #2C2C2C; margin-top: 0;">About This Service</h3>
-    <p style="color: #555555; line-height: 1.6;">
-        Our AI-powered system helps you instantly determine your eligibility for various government schemes, 
-        startup funding, and subsidies. Simply provide your details below and get accurate predictions 
-        powered by machine learning technology.
-    </p>
-</div>
-""", unsafe_allow_html=True)
+### Welcome to the AI Government Scheme Eligibility Predictor
 
-# Create two columns for better layout
-col1, col2 = st.columns(2)
+This application uses advanced machine learning to help you determine your eligibility 
+for various government schemes, funding, and subsidies. Simply fill in your details 
+in the sidebar and click the **Predict** button to get instant results.
+""")
 
-with col1:
-    st.markdown("### 👤 Personal Information")
-    
+# Sidebar for user inputs
+st.sidebar.header("📋 Enter Your Details")
+st.sidebar.markdown("---")
+
+try:
     # Age Input
-    age = st.slider(
-        "Age (years)",
+    age = st.sidebar.slider(
+        "Age",
         min_value=18,
         max_value=80,
         value=30,
@@ -186,21 +146,17 @@ with col1:
     )
     
     # Income Input
-    income = st.slider(
-        "Annual Income (INR)",
+    income = st.sidebar.slider(
+        "Annual Income (₹)",
         min_value=10000,
         max_value=2000000,
         value=300000,
         step=10000,
-        format="₹%d",
         help="Select your annual income in Indian Rupees"
     )
-
-with col2:
-    st.markdown("### 🎓 Qualifications")
     
     # Education Input
-    education = st.selectbox(
+    education = st.sidebar.selectbox(
         "Education Level",
         options=["School", "Graduate", "Postgraduate"],
         index=1,
@@ -208,137 +164,161 @@ with col2:
     )
     
     # Employment Status Input
-    employed = st.selectbox(
+    employment_status = st.sidebar.selectbox(
         "Employment Status",
         options=["Employed", "Unemployed"],
         index=0,
         help="Select your current employment status"
     )
-
-# Spacing
-st.markdown("<br>", unsafe_allow_html=True)
-
-# Check Eligibility Button
-if st.button("🔍 Check Eligibility"):
-    # Show loading spinner while processing
-    with st.spinner("Analyzing your eligibility..."):
-        # Get prediction from ML model
-        result, confidence = predict_eligibility(age, income, education, employed)
-        
-        # Display results based on prediction
-        if result == "Eligible":
-            st.success("✅ **Congratulations! You are ELIGIBLE for government schemes.**")
-            st.markdown(f"""
-            <div class="success-box">
-                <h3 style="color: #1B7F5C; margin-top: 0;">Eligibility Confirmed</h3>
-                <p style="color: #2C2C2C; font-size: 1.1rem; margin-bottom: 0.5rem;">
-                    Based on your profile, you qualify for government assistance programs.
-                </p>
-                <p style="color: #555555; font-size: 1.3rem; font-weight: 600;">
-                    Confidence Score: {confidence:.1f}%
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Additional Information
-            st.info("📋 **Next Steps:** Visit your nearest government office or official portal to apply for schemes.")
-            
-        else:
-            st.error("❌ **You are currently NOT ELIGIBLE for government schemes.**")
-            st.markdown(f"""
-            <div class="error-box">
-                <h3 style="color: #C0392B; margin-top: 0;">Eligibility Not Met</h3>
-                <p style="color: #2C2C2C; font-size: 1.1rem; margin-bottom: 0.5rem;">
-                    Based on your current profile, you do not meet the eligibility criteria.
-                </p>
-                <p style="color: #555555; font-size: 1.3rem; font-weight: 600;">
-                    Confidence Score: {confidence:.1f}%
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Suggestions
-            st.info("💡 **Suggestion:** Some criteria may change over time. Consider checking again in the future or exploring other schemes.")
-        
-        # Show input summary
-        st.markdown("---")
-        st.markdown("### 📊 Your Profile Summary")
-        
-        col_a, col_b, col_c, col_d = st.columns(4)
-        
-        with col_a:
-            st.metric("Age", f"{age} years")
-        
-        with col_b:
-            st.metric("Income", f"₹{income:,}")
-        
-        with col_c:
-            st.metric("Education", education)
-        
-        with col_d:
-            st.metric("Employment", employed)
-
-# Feature Importance Section (Optional Educational Component)
-with st.expander("🔬 How does the AI make predictions?"):
-    st.markdown("""
-    <div class="feature-card">
-        <p style="margin: 0; color: #2C2C2C; line-height: 1.6;">
-            Our AI system uses a <strong>Decision Tree Classifier</strong> trained on historical eligibility data. 
-            It analyzes multiple factors including your age, income, education level, and employment status 
-            to make accurate predictions about scheme eligibility.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
     
-    # Show feature importance
-    importance = get_feature_importance()
-    st.markdown("#### Key Factors Influencing Eligibility:")
+    # Location Input
+    location = st.sidebar.selectbox(
+        "Location",
+        options=["Urban", "Rural"],
+        index=0,
+        help="Select your location type"
+    )
     
-    importance_df = pd.DataFrame({
-        'Factor': importance.keys(),
-        'Importance': [f"{v*100:.1f}%" for v in importance.values()]
-    })
-    st.table(importance_df)
+    # Gender Input
+    gender = st.sidebar.selectbox(
+        "Gender",
+        options=["Male", "Female"],
+        index=0,
+        help="Select your gender"
+    )
+    
+    st.sidebar.markdown("---")
+    
+    # Predict Button
+    predict_button = st.sidebar.button("🔍 Predict Eligibility", use_container_width=True)
+    
+    # Handle prediction
+    if predict_button:
+        # Show loading spinner while processing
+        with st.spinner("Analyzing your eligibility..."):
+            try:
+                # Get prediction from ML model
+                result, confidence = predict_eligibility(age, income, education, employment_status, location, gender)
+                
+                # Check if prediction was successful
+                if result == "Error":
+                    st.error("❌ An error occurred while making the prediction. Please try again.")
+                else:
+                    # Display results based on prediction
+                    if result == "Eligible":
+                        st.success("✅ **Congratulations! You are ELIGIBLE for government schemes.**")
+                        st.markdown(f"""
+                        <div class="success-box">
+                            <h3 style="color: #28a745; margin-top: 0;">✅ Eligibility Confirmed</h3>
+                            <p style="color: #2C2C2C; font-size: 1.1rem; margin-bottom: 0.5rem;">
+                                Based on your profile, you qualify for government assistance programs.
+                            </p>
+                            <p style="color: #555555; font-size: 1.3rem; font-weight: 600;">
+                                Confidence Score: {confidence:.1f}%
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.error("❌ **You are currently NOT ELIGIBLE for government schemes.**")
+                        st.markdown(f"""
+                        <div class="error-box">
+                            <h3 style="color: #dc3545; margin-top: 0;">❌ Eligibility Not Met</h3>
+                            <p style="color: #2C2C2C; font-size: 1.1rem; margin-bottom: 0.5rem;">
+                                Based on your current profile, you do not meet the eligibility criteria.
+                            </p>
+                            <p style="color: #555555; font-size: 1.3rem; font-weight: 600;">
+                                Confidence Score: {confidence:.1f}%
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Show prediction confidence chart
+                    st.markdown("### 📊 Prediction Confidence")
+                    
+                    # Create matplotlib chart
+                    fig, ax = plt.subplots(figsize=(10, 4))
+                    
+                    # Determine colors based on result
+                    if result == "Eligible":
+                        colors = ['#28a745', '#dc3545']
+                        labels = ['Eligible', 'Not Eligible']
+                        values = [confidence, 100 - confidence]
+                    else:
+                        colors = ['#dc3545', '#28a745']
+                        labels = ['Not Eligible', 'Eligible']
+                        values = [confidence, 100 - confidence]
+                    
+                    # Create horizontal bar chart
+                    bars = ax.barh(labels, values, color=colors, alpha=0.7, edgecolor='black', linewidth=1.5)
+                    
+                    # Add value labels on bars
+                    for i, (bar, value) in enumerate(zip(bars, values)):
+                        ax.text(value + 1, i, f'{value:.1f}%', va='center', fontsize=12, fontweight='bold')
+                    
+                    ax.set_xlabel('Confidence (%)', fontsize=12, fontweight='bold')
+                    ax.set_xlim(0, 110)
+                    ax.set_title('Model Prediction Confidence', fontsize=14, fontweight='bold', pad=15)
+                    ax.grid(axis='x', alpha=0.3, linestyle='--')
+                    
+                    # Display the chart
+                    st.pyplot(fig)
+                    plt.close()
+                    
+                    # Show input summary
+                    st.markdown("---")
+                    st.markdown("### 📝 Your Profile Summary")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.metric("Age", f"{age} years")
+                        st.metric("Education", education)
+                    
+                    with col2:
+                        st.metric("Income", f"₹{income:,}")
+                        st.metric("Employment", employment_status)
+                    
+                    with col3:
+                        st.metric("Location", location)
+                        st.metric("Gender", gender)
+                    
+            except Exception as e:
+                st.error(f"❌ An unexpected error occurred: {str(e)}")
+                st.info("Please check your inputs and try again.")
+    
+except Exception as e:
+    st.error(f"❌ Error loading the application: {str(e)}")
+    st.info("Please refresh the page or contact support if the issue persists.")
 
-# Information Section
+# Feature Importance Section
 st.markdown("---")
-st.markdown("### ℹ️ Important Information")
-
-info_col1, info_col2 = st.columns(2)
-
-with info_col1:
-    st.markdown("""
-    <div class="feature-card">
-        <h4 style="color: #2C2C2C; margin-top: 0;">✨ Benefits</h4>
-        <ul style="color: #555555; line-height: 1.8;">
-            <li>Instant predictions</li>
-            <li>AI-powered accuracy</li>
-            <li>Free to use</li>
-            <li>Privacy protected</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-with info_col2:
-    st.markdown("""
-    <div class="feature-card">
-        <h4 style="color: #2C2C2C; margin-top: 0;">🎯 Applicable Schemes</h4>
-        <ul style="color: #555555; line-height: 1.8;">
-            <li>Startup funding</li>
-            <li>Education subsidies</li>
-            <li>Healthcare schemes</li>
-            <li>Employment programs</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
+with st.expander("🔬 How does the AI make predictions?"):
+    try:
+        st.markdown("""
+        Our AI system uses a **Random Forest Classifier** trained on historical eligibility data. 
+        It analyzes multiple factors including your age, income, education level, employment status,
+        location, and gender to make accurate predictions about scheme eligibility.
+        """)
+        
+        # Show feature importance
+        importance = get_feature_importance()
+        if importance:
+            st.markdown("#### Key Factors Influencing Eligibility:")
+            
+            importance_df = pd.DataFrame({
+                'Factor': importance.keys(),
+                'Importance': [f"{v*100:.1f}%" for v in importance.values()]
+            })
+            st.table(importance_df)
+    except Exception as e:
+        st.warning("Unable to load feature importance information.")
 
 # Footer
+st.markdown("---")
 st.markdown("""
-<div class="footer">
-    <p style="margin: 0;">
-        <strong>AI Government Scheme Eligibility Predictor</strong><br>
-        Powered by Machine Learning | Built with Streamlit<br>
-        © 2024 | For informational purposes only. Please verify with official sources.
-    </p>
+<div style="text-align: center; padding: 2rem; color: #666;">
+    <strong>AI Government Scheme Eligibility Predictor</strong><br>
+    Powered by Machine Learning | Built with Streamlit<br>
+    © 2024 | For informational purposes only
 </div>
 """, unsafe_allow_html=True)
