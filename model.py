@@ -151,8 +151,8 @@ def load_model():
         # Try to load existing model
         model = joblib.load(model_path)
         encoders = joblib.load(encoders_path)
-    except:
-        # Train new model if files don't exist
+    except (FileNotFoundError, EOFError, Exception):
+        # Train new model if files don't exist or are corrupted
         model, encoders = train_model()
     
     return model, encoders
@@ -200,7 +200,8 @@ def predict_eligibility(age, income, education, employed, location, gender):
         
         return result, confidence_score
     except Exception as e:
-        # Return error message if prediction fails
+        # Log error and return error message
+        print(f"Prediction error: {str(e)}")
         return "Error", 0.0
 
 # Optional: Function to get model feature importance
@@ -215,5 +216,6 @@ def get_feature_importance():
         
         return dict(zip(feature_names, importances))
     except Exception as e:
-        # Return empty dict if error occurs
+        # Log error and return empty dict
+        print(f"Feature importance error: {str(e)}")
         return {}
