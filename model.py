@@ -1,11 +1,10 @@
 """
-AI Government Scheme Eligibility Predictor - ML Model
-------------------------------------------------------
-This module handles the machine learning logic for predicting
-eligibility for government schemes based on citizen demographics.
+AI Government Assistance Platform - ML Model
+--------------------------------------------
+Enhanced ML model with support for business metrics and multiple features.
 
 Model: RandomForestClassifier (scikit-learn)
-Features: age, income, education, employment status, location, gender
+Features: age, income, education, employment, location, gender, startup_owner, business_age, business_revenue
 """
 
 import pandas as pd
@@ -14,106 +13,48 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 import joblib
 import os
+import streamlit as st
 
 # Initialize label encoders for categorical features
 education_encoder = LabelEncoder()
 employment_encoder = LabelEncoder()
 location_encoder = LabelEncoder()
 gender_encoder = LabelEncoder()
+startup_encoder = LabelEncoder()
 
-# Create training dataset
-# This dataset represents historical eligibility decisions
-def create_training_data():
-    """
-    Creates a synthetic training dataset for government scheme eligibility.
-    
-    Features:
-    - age: Age of the applicant (18-80 years)
-    - income: Annual income in INR (10,000 - 2,000,000)
-    - education: Education level (School, Graduate, Postgraduate)
-    - employed: Employment status (Employed, Unemployed)
-    - location: Location type (Urban, Rural)
-    - gender: Gender (Male, Female)
-    - eligible: Target variable (1 = Eligible, 0 = Not Eligible)
-    
-    Eligibility Logic:
-    - Priority given to unemployed individuals with lower income
-    - Education level influences eligibility positively
-    - Age between 18-60 is preferred range
-    - Income below 500,000 INR increases eligibility
-    - Rural location may get priority in some schemes
-    """
-    data = {
-        'age': [23, 45, 32, 28, 55, 19, 38, 42, 25, 35,
-                50, 22, 40, 30, 48, 26, 44, 33, 29, 52,
-                24, 39, 46, 27, 31, 60, 21, 37, 43, 34,
-                49, 36, 41, 54, 20, 47, 56, 25, 30, 38,
-                28, 33, 45, 51, 24, 40, 35, 29, 42, 26],
-        'income': [250000, 800000, 450000, 180000, 1200000, 120000, 550000, 950000, 200000, 600000,
-                   1500000, 150000, 700000, 300000, 1100000, 220000, 850000, 400000, 280000, 1300000,
-                   190000, 620000, 1000000, 170000, 380000, 1800000, 140000, 500000, 900000, 420000,
-                   1400000, 480000, 750000, 1600000, 130000, 1050000, 1700000, 210000, 320000, 580000,
-                   260000, 440000, 920000, 1450000, 195000, 780000, 520000, 290000, 880000, 230000],
-        'education': ['School', 'Graduate', 'Graduate', 'School', 'Postgraduate', 'School', 'Graduate', 
-                      'Postgraduate', 'School', 'Graduate', 'Postgraduate', 'School', 'Graduate', 
-                      'Graduate', 'Postgraduate', 'School', 'Graduate', 'Graduate', 'School', 'Postgraduate',
-                      'School', 'Graduate', 'Postgraduate', 'School', 'Graduate', 'Postgraduate', 'School',
-                      'Graduate', 'Graduate', 'Graduate', 'Postgraduate', 'Graduate', 'Graduate', 'Postgraduate',
-                      'School', 'Graduate', 'Postgraduate', 'School', 'Graduate', 'Graduate',
-                      'School', 'Graduate', 'Graduate', 'Postgraduate', 'School', 'Graduate', 'Graduate',
-                      'School', 'Graduate', 'School'],
-        'employed': ['Unemployed', 'Employed', 'Unemployed', 'Unemployed', 'Employed', 'Unemployed', 
-                     'Employed', 'Employed', 'Unemployed', 'Employed', 'Employed', 'Unemployed', 
-                     'Employed', 'Unemployed', 'Employed', 'Unemployed', 'Employed', 'Unemployed', 
-                     'Unemployed', 'Employed', 'Unemployed', 'Employed', 'Employed', 'Unemployed',
-                     'Unemployed', 'Employed', 'Unemployed', 'Employed', 'Employed', 'Unemployed',
-                     'Employed', 'Employed', 'Employed', 'Employed', 'Unemployed', 'Employed', 'Employed',
-                     'Unemployed', 'Unemployed', 'Employed', 'Unemployed', 'Unemployed', 'Employed',
-                     'Employed', 'Unemployed', 'Employed', 'Employed', 'Unemployed', 'Employed', 'Unemployed'],
-        'location': ['Rural', 'Urban', 'Rural', 'Rural', 'Urban', 'Rural', 'Urban', 'Urban', 'Rural', 'Urban',
-                     'Urban', 'Rural', 'Urban', 'Rural', 'Urban', 'Rural', 'Urban', 'Rural', 'Rural', 'Urban',
-                     'Rural', 'Urban', 'Urban', 'Rural', 'Rural', 'Urban', 'Rural', 'Urban', 'Urban', 'Rural',
-                     'Urban', 'Urban', 'Urban', 'Urban', 'Rural', 'Urban', 'Urban', 'Rural', 'Rural', 'Urban',
-                     'Rural', 'Rural', 'Urban', 'Urban', 'Rural', 'Urban', 'Urban', 'Rural', 'Urban', 'Rural'],
-        'gender': ['Male', 'Female', 'Male', 'Female', 'Male', 'Male', 'Female', 'Male', 'Female', 'Male',
-                   'Female', 'Male', 'Male', 'Female', 'Female', 'Male', 'Male', 'Female', 'Male', 'Female',
-                   'Male', 'Female', 'Male', 'Female', 'Male', 'Male', 'Female', 'Male', 'Female', 'Male',
-                   'Female', 'Male', 'Male', 'Female', 'Male', 'Female', 'Male', 'Female', 'Male', 'Female',
-                   'Male', 'Female', 'Male', 'Female', 'Male', 'Male', 'Female', 'Male', 'Female', 'Male'],
-        'eligible': [1, 0, 1, 1, 0, 1, 0, 0, 1, 0,
-                     0, 1, 0, 1, 0, 1, 0, 1, 1, 0,
-                     1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
-                     0, 0, 0, 0, 1, 0, 0, 1, 1, 0,
-                     1, 1, 0, 0, 1, 0, 0, 1, 0, 1]
-    }
-    
-    return pd.DataFrame(data)
-
-# Train the model
+@st.cache_resource
 def train_model():
     """
     Trains a RandomForestClassifier on the synthetic dataset.
+    Uses caching to avoid retraining on every run.
     
     Returns:
         model: Trained RandomForestClassifier
         encoders: Dictionary containing label encoders for categorical features
     """
+    # Import data module
+    from data import generate_training_data
+    
     # Load training data
-    df = create_training_data()
+    df = generate_training_data(n_samples=500)
     
     # Encode categorical features
     education_encoder.fit(['School', 'Graduate', 'Postgraduate'])
     employment_encoder.fit(['Employed', 'Unemployed'])
     location_encoder.fit(['Urban', 'Rural'])
     gender_encoder.fit(['Male', 'Female'])
+    startup_encoder.fit(['No', 'Yes'])
     
     df['education_encoded'] = education_encoder.transform(df['education'])
-    df['employed_encoded'] = employment_encoder.transform(df['employed'])
+    df['employed_encoded'] = employment_encoder.transform(df['employment_status'])
     df['location_encoded'] = location_encoder.transform(df['location'])
     df['gender_encoded'] = gender_encoder.transform(df['gender'])
+    df['startup_encoded'] = startup_encoder.transform(df['startup_owner'])
     
     # Prepare features (X) and target (y)
-    X = df[['age', 'income', 'education_encoded', 'employed_encoded', 'location_encoded', 'gender_encoded']]
+    X = df[['age', 'income', 'education_encoded', 'employed_encoded', 
+            'location_encoded', 'gender_encoded', 'startup_encoded',
+            'business_age', 'business_revenue']]
     y = df['eligible']
     
     # Initialize and train the Random Forest Classifier
@@ -132,17 +73,19 @@ def train_model():
         'education': education_encoder, 
         'employment': employment_encoder,
         'location': location_encoder,
-        'gender': gender_encoder
+        'gender': gender_encoder,
+        'startup': startup_encoder
     }
     encoders_path = os.path.join(os.path.dirname(__file__), 'encoders.pkl')
     joblib.dump(encoders_dict, encoders_path)
     
     return model, encoders_dict
 
-# Load or train the model
+@st.cache_resource
 def load_model():
     """
     Loads the trained model and encoders from disk, or trains a new one if not found.
+    Uses caching to avoid reloading on every run.
     """
     model_path = os.path.join(os.path.dirname(__file__), 'eligibility_model.pkl')
     encoders_path = os.path.join(os.path.dirname(__file__), 'encoders.pkl')
@@ -160,7 +103,8 @@ def load_model():
 # Initialize the global model
 model, encoders = load_model()
 
-def predict_eligibility(age, income, education, employed, location, gender):
+def predict_eligibility(age, income, education, employment_status, location, gender, 
+                       startup_owner='No', business_age=0, business_revenue=0):
     """
     Predicts government scheme eligibility for a given citizen profile.
     
@@ -168,41 +112,50 @@ def predict_eligibility(age, income, education, employed, location, gender):
         age (int): Age of the applicant (18-80 years)
         income (int): Annual income in INR
         education (str): Education level ('School', 'Graduate', 'Postgraduate')
-        employed (str): Employment status ('Employed', 'Unemployed')
+        employment_status (str): Employment status ('Employed', 'Unemployed')
         location (str): Location type ('Urban', 'Rural')
         gender (str): Gender ('Male', 'Female')
+        startup_owner (str): Startup ownership ('Yes', 'No')
+        business_age (int): Age of business in years
+        business_revenue (int): Annual business revenue
     
     Returns:
-        tuple: (prediction, confidence_score)
+        tuple: (prediction, confidence_score, eligibility_score)
             - prediction (str): 'Eligible' or 'Not Eligible'
             - confidence_score (float): Confidence percentage (0-100)
+            - eligibility_score (float): Overall eligibility score (0-100)
     """
     try:
         # Encode categorical inputs
         education_encoded = encoders['education'].transform([education])[0]
-        employed_encoded = encoders['employment'].transform([employed])[0]
+        employed_encoded = encoders['employment'].transform([employment_status])[0]
         location_encoded = encoders['location'].transform([location])[0]
         gender_encoded = encoders['gender'].transform([gender])[0]
+        startup_encoded = encoders['startup'].transform([startup_owner])[0]
         
         # Create input feature array
-        input_features = np.array([[age, income, education_encoded, employed_encoded, location_encoded, gender_encoded]])
+        input_features = np.array([[age, income, education_encoded, employed_encoded, 
+                                   location_encoded, gender_encoded, startup_encoded,
+                                   business_age, business_revenue]])
         
         # Make prediction
         prediction = model.predict(input_features)[0]
         
         # Get probability scores for confidence calculation
-        # predict_proba returns probabilities for each class [Not Eligible, Eligible]
         probabilities = model.predict_proba(input_features)[0]
-        confidence_score = probabilities[prediction] * 100  # Convert to percentage
+        confidence_score = probabilities[prediction] * 100
+        
+        # Calculate overall eligibility score (0-100)
+        eligibility_score = probabilities[1] * 100  # Probability of being eligible
         
         # Convert numeric prediction to human-readable format
         result = "Eligible" if prediction == 1 else "Not Eligible"
         
-        return result, confidence_score
+        return result, confidence_score, eligibility_score
     except Exception as e:
         # Log error and return error message
         print(f"Prediction error: {str(e)}")
-        return "Error", 0.0
+        return "Error", 0.0, 0.0
 
 # Optional: Function to get model feature importance
 def get_feature_importance():
@@ -211,7 +164,8 @@ def get_feature_importance():
     Useful for understanding which factors most influence eligibility.
     """
     try:
-        feature_names = ['Age', 'Income', 'Education', 'Employment Status', 'Location', 'Gender']
+        feature_names = ['Age', 'Income', 'Education', 'Employment Status', 
+                        'Location', 'Gender', 'Startup Owner', 'Business Age', 'Business Revenue']
         importances = model.feature_importances_
         
         return dict(zip(feature_names, importances))
@@ -219,3 +173,32 @@ def get_feature_importance():
         # Log error and return empty dict
         print(f"Feature importance error: {str(e)}")
         return {}
+
+def get_model_accuracy():
+    """
+    Calculate model accuracy on training data (for monitoring).
+    
+    Returns:
+        float: Accuracy score (0-1)
+    """
+    try:
+        from data import generate_training_data
+        df = generate_training_data(n_samples=100)
+        
+        # Encode features
+        df['education_encoded'] = encoders['education'].transform(df['education'])
+        df['employed_encoded'] = encoders['employment'].transform(df['employment_status'])
+        df['location_encoded'] = encoders['location'].transform(df['location'])
+        df['gender_encoded'] = encoders['gender'].transform(df['gender'])
+        df['startup_encoded'] = encoders['startup'].transform(df['startup_owner'])
+        
+        X = df[['age', 'income', 'education_encoded', 'employed_encoded', 
+                'location_encoded', 'gender_encoded', 'startup_encoded',
+                'business_age', 'business_revenue']]
+        y = df['eligible']
+        
+        accuracy = model.score(X, y)
+        return accuracy
+    except Exception as e:
+        print(f"Accuracy calculation error: {str(e)}")
+        return 0.0
