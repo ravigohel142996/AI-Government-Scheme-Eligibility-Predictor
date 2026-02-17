@@ -47,3 +47,6 @@ temp/
 
 # Logs
 *.log
+
+# Model files (generated at runtime)
+*.pkl
